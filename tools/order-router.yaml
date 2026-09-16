@@ -1,0 +1,38 @@
+name: order-router
+description: Route multi-vendor split orders, calculate platform commission fees, and update ledger balances
+version: 1.0.0
+input_schema:
+  type: object
+  properties:
+    order_id:
+      type: string
+      description: Unique order identifier
+    items:
+      type: array
+      items:
+        type: object
+      description: Order line items with product ID, vendor ID, quantity, and unit price
+    action:
+      type: string
+      enum: [create, update_status, request_refund, approve_refund]
+      description: Lifecycle action to execute on the order
+    status:
+      type: string
+      description: Target status for update_status action
+  required: [order_id, action]
+output_schema:
+  type: object
+  properties:
+    success:
+      type: boolean
+    vendor_splits:
+      type: array
+      items:
+        type: object
+    platform_fee:
+      type: number
+    order_status:
+      type: string
+annotations:
+  requires_confirmation: true
+  read_only: false

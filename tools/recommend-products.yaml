@@ -1,0 +1,34 @@
+name: recommend-products
+description: Generate personalized product recommendations based on user browsing history and past orders
+version: 1.0.0
+input_schema:
+  type: object
+  properties:
+    user_id:
+      type: string
+      description: Identifier of the shopper
+    browsing_history:
+      type: array
+      items:
+        type: object
+      description: List of recently viewed product items or IDs
+    past_orders:
+      type: array
+      items:
+        type: object
+      description: List of past completed orders with item details
+    limit:
+      type: integer
+      description: Maximum number of recommendations to return
+      default: 6
+  required: [user_id]
+output_schema:
+  type: object
+  properties:
+    recommendations:
+      type: array
+      items:
+        type: object
+annotations:
+  read_only: true
+  requires_confirmation: false

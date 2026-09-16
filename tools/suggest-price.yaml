@@ -1,0 +1,34 @@
+name: suggest-price
+description: Compute statistical benchmark pricing and recommendations for a category and subcategory
+version: 1.0.0
+input_schema:
+  type: object
+  properties:
+    category:
+      type: string
+      description: Product category name
+    subcategory:
+      type: string
+      description: Product subcategory name
+    current_product_id:
+      type: string
+      description: ID of current product to exclude from competitor calculation
+  required: [category]
+output_schema:
+  type: object
+  properties:
+    min:
+      type: number
+    max:
+      type: number
+    avg:
+      type: number
+    median:
+      type: number
+    competitive:
+      type: number
+    premium:
+      type: number
+annotations:
+  read_only: true
+  requires_confirmation: false

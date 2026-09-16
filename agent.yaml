@@ -1,0 +1,79 @@
+spec_version: "0.1.0"
+name: vendorhub-agent
+version: 1.0.0
+description: "Autonomous multi-vendor e-commerce intelligent agent with client-side NLP search, behavioral personalization, and statistical price intelligence."
+author: "Chithra"
+license: MIT
+
+model:
+  preferred: gpt-4o
+  fallback:
+    - claude-3-5-sonnet-20241022
+    - gemini-1.5-pro
+  constraints:
+    temperature: 0.2
+    max_tokens: 4096
+
+skills:
+  - semantic-catalog-search
+  - behavioral-recommendations
+  - statistical-pricing-engine
+  - order-lifecycle-manager
+
+tools:
+  - catalog-search
+  - recommend-products
+  - suggest-price
+  - order-router
+
+runtime:
+  max_turns: 30
+  temperature: 0.2
+  timeout: 120
+
+compliance:
+  risk_tier: standard
+  recordkeeping:
+    audit_logging: true
+    log_format: structured_json
+    retention_period: 3y
+    immutable: true
+  data_governance:
+    pii_handling: redact
+    data_classification: internal
+    consent_required: true
+  communications:
+    fair_balanced: true
+    no_misleading: true
+  segregation_of_duties:
+    roles:
+      - id: buyer_assistant
+        description: Assists shoppers with semantic search, discovery, and cart selection
+        permissions:
+          - create
+          - submit
+      - id: vendor_advisor
+        description: Advises marketplace sellers with statistical pricing intelligence
+        permissions:
+          - review
+          - report
+      - id: order_executor
+        description: Executes multi-vendor split orders and sandbox payment ledgers
+        permissions:
+          - execute
+      - id: admin_auditor
+        description: Audits marketplace platform fees, vendor verifications, and refund settlements
+        permissions:
+          - audit
+          - approve
+          - reject
+    conflicts:
+      - [vendor_advisor, admin_auditor]
+      - [order_executor, admin_auditor]
+
+tags:
+  - ecommerce
+  - multi-vendor
+  - nlp-search
+  - pricing-intelligence
+  - retail
