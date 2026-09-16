@@ -1,153 +1,103 @@
-# EXPLAINABILITY.md: VendorHub Multi-Vendor Intelligent E-Commerce Agent
+# EXPLAINABILITY — Ecommerce Website
 
-> **Protocol:** OpenGAP Spec v0.1.0  
-> **Domain Category:** Retail & e-commerce  
-> **Agent Name:** `vendorhub-agent`  
-> **Platform:** VendorHub Marketplace
-
----
-
-## 1. Executive Summary & Purpose
-
-VendorHub is an autonomous multi-vendor e-commerce agent platform that powers an intelligent, local-first retail marketplace. Traditional e-commerce architectures rely heavily on centralized, opaque cloud services for search, recommendation scoring, and dynamic repricing. VendorHub instead executes these algorithmic decision engines through transparent, deterministic client-side logic and structured protocol interfaces.
-
-This document provides a comprehensive technical breakdown of:
-1. **How the agent decides:** The mathematical models, heuristic algorithms, and decision pipelines governing search, pricing, recommendations, and transaction routing.
-2. **The data it uses:** The data schemas, vector representations, session histories, and ledger states consumed across buyer, vendor, and admin interactions.
-3. **Operational limitations & boundaries:** Algorithmic thresholds, edge-case failure modes, sandbox parameters, and human-in-the-loop escalation rules.
+> **Admissibility & Transparency Report for OpenGAP / Agent Passport**  
+> *Agent Name:* Ecommerce Website (`ecommerce-website`)  
+> *Specification:* OpenGAP v0.1.0  
+> *Domain:* Retail & e-commerce / Multi-Vendor Marketplace  
 
 ---
 
-## 2. How the Agent Decides: Decision Pathways & Algorithms
+## 1. Overview & Architectural Purpose
 
-### 2.1. Client-Side Semantic NLP Search & Intent Resolution
-When a shopper inputs a search query, the agent executes a 3-stage decision pipeline to interpret user intent, tolerate spelling discrepancies, and rank relevant catalog items:
+Ecommerce Website (VendorHub) is an autonomous, local-first multi-vendor e-commerce intelligent agent and marketplace orchestrator. Its purpose is to deliver client-side semantic product discovery, personalized behavioral recommendations, dynamic statistical vendor pricing intelligence, and split-order fulfillment without reliance on opaque, centralized cloud services.
+
+The agent parses user search queries, computes typo-tolerant Levenshtein edit distance matrices against product catalogs, expands intent clusters through semantic synonym mappings, evaluates buyer browsing and purchasing affinities, performs statistical price modeling across competitor listings, and orchestrates simulated multi-vendor checkout and refund transactions with deterministic audit trails.
+
+---
+
+## 2. How the Agent Decides (Decision-Making Logic)
+
+Ecommerce Website operates across a deterministic, multi-stage decision pipeline:
 
 ```
-[User Input Query]
-       │
-       ▼
-[Stage 1: Synonym Expansion Mapping]
-       │ (Matches intent clusters e.g., 'notebook' -> 'laptop', 'macbook', 'pc')
-       ▼
-[Stage 2: Fuzzy Typo Tolerance via Levenshtein DP Matrix]
-       │ (Calculates edit distances with threshold <= 2 against catalog tokens)
-       ▼
-[Stage 3: Relevance Scoring & Multi-Factor Boosting]
-       │ (Direct match: +10 | Semantic match: +5 | Featured: +2 | Trending: +1)
-       ▼
-[Ranked Product Result Set]
+[User Query / Shopping Intent] ──> [Semantic NLP & Synonym Expansion] ──> [Fuzzy Typo-Tolerance DP]
+                                                                                      │
+                                                                                      ▼
+[Multi-Vendor Split Fulfillment] <── [Statistical Pricing & Affinity] <── [Relevance Scoring & Ranking]
 ```
 
-#### Mathematical Formulation (Levenshtein Distance Matrix)
-For user search term $s$ of length $m$ and catalog token $t$ of length $n$, the edit distance $D(i, j)$ is computed using dynamic programming:
+### 2.1 Semantic NLP Search & Typo-Tolerant Intent Resolution
+- **Decision:** Determines matching catalog products based on shopper keywords, even in the presence of spelling mistakes, slang, or synonym variants.
+- **Model:** Executes client-side dynamic programming Levenshtein distance calculation combined with bidirectional synonym expansion clusters (e.g., mapping `notebook` to `laptop`, `macbook`, `pc`).
+- **Rules:**
+  - Dynamic programming matrix: $D(i, j) = \min(D(i-1, j)+1, D(i, j-1)+1, D(i-1, j-1) + \text{cost})$.
+  - Accepts tokens within an edit distance threshold $\le 2$.
+  - Assigns multi-factor relevance scores: $+10$ for title substring match, $+5$ for tag match, $+2$ for featured status, and $+1$ for trending velocity.
 
-$$D(i, 0) = i \quad \text{for } 0 \le i \le m$$
-$$D(0, j) = j \quad \text{for } 0 \le j \le n$$
+### 2.2 Behavioral Personalization & Recommendation Engine
+- **Decision:** Determines personalized item rankings for shoppers based on explicit and implicit behavioral telemetry.
+- **Rationale:** Prioritizes verified user intent over passive interactions. Purchases contribute double $(+2)$ compared to passive browsing clicks $(+1)$ to generate real-time affinity vectors.
+- **Rules:**
+  - Affinity scoring: $R(p) = 3 \cdot \mathcal{A}(\text{category}(p)) + 5 \cdot \mathbb{I}_{\text{featured}} + 4 \cdot \mathbb{I}_{\text{trending}} + 2 \cdot \text{rating} + \min(\text{sold}/100, 10)$.
+  - Filters out out-of-stock items and currently viewed product IDs before outputting the top $k$ recommended listings.
 
-$$D(i, j) = \min \begin{cases}
-D(i - 1, j) + 1 & \text{(Deletion)} \\
-D(i, j - 1) + 1 & \text{(Insertion)} \\
-D(i - 1, j - 1) + \text{cost} & \text{(Substitution, where cost = 0 if } s[i] = t[j] \text{ else } 1)
-\end{cases}$$
+### 2.3 Statistical Competitor Pricing Intelligence
+- **Decision:** Recommends optimal pricing points (Competitive vs. Premium) to marketplace vendors based on peer distribution statistics.
+- **Rules:**
+  - Clusters competitor products by matching `category` and `subcategory` with positive stock.
+  - Computes distribution metrics: minimum ($P_{\min}$), maximum ($P_{\max}$), mean ($\mu$), and median ($\tilde{P}$).
+  - Recommends **Competitive Price** at $95\%$ of cluster mean ($\text{round}(0.95 \cdot \mu)$) to optimize sales velocity.
+  - Recommends **Premium Price** at $110\%$ of cluster mean ($\text{round}(1.10 \cdot \mu)$) for items with superior ratings ($> 4.5$).
 
-A candidate word is accepted as a match if:
-$$\min_{w \in \text{tokens}(p)} D(q, w) \le 2$$
-
-#### Relevance Scoring Function
-Each matching product $p$ is assigned a composite relevance score $S_{\text{rel}}(p, q)$:
-$$S_{\text{rel}}(p, q) = 10 \cdot \mathbb{I}_{\text{nameContains}}(p, q) + 5 \cdot \mathbb{I}_{\text{metaContains}}(p, q) + 2 \cdot \mathbb{I}_{\text{featured}}(p) + 1 \cdot \mathbb{I}_{\text{trending}}(p)$$
-
-Products are deterministically sorted by descending $S_{\text{rel}}$ before presenting to the buyer.
-
----
-
-### 2.2. Statistical Vendor Price Intelligence
-To empower sellers with real-time competitive positioning without predatory pricing, the agent computes empirical distribution statistics across category clusters:
-
-1. **Cohort Clustering:** Identifies all active, in-stock products within the same primary `category` and secondary `subcategory`, excluding the seller's active product:
-   $$\mathcal{C}(c, s) = \{ p \in \mathcal{P} \mid p.\text{category} = c \land p.\text{subcategory} = s \land p.\text{stock} > 0 \land p.\text{id} \ne p_{\text{current}} \}$$
-2. **Distribution Metrics:**
-   - Minimum: $P_{\min} = \min_{p \in \mathcal{C}} p.\text{price}$
-   - Maximum: $P_{\max} = \max_{p \in \mathcal{C}} p.\text{price}$
-   - Mean: $\mu = \frac{1}{|\mathcal{C}|} \sum_{p \in \mathcal{C}} p.\text{price}$
-   - Median: $\tilde{P} = \text{median}(\{p.\text{price} \mid p \in \mathcal{C}\})$
-3. **Strategic Price Recommendations:**
-   - **Competitive Price Recommendation:** 
-     $$P_{\text{competitive}} = \text{round}(0.95 \cdot \mu)$$
-     *Rationale:* Priced 5% beneath market average to accelerate velocity and capture initial search impressions while maintaining sustainable margins.
-   - **Premium Price Recommendation:**
-     $$P_{\text{premium}} = \text{round}(1.10 \cdot \mu)$$
-     *Rationale:* Priced 10% above average for products boasting superior ratings ($> 4.5$), higher warranties, or bundled accessories.
+### 2.4 Multi-Vendor Split Fulfillment & Sandbox Settlement
+- **Decision:** Evaluates multi-vendor cart payloads, decomposes line items by vendor identifier, computes platform commission fees, and simulates cryptographic payment handshakes.
+- **Rules:**
+  - Segregates cart items into discrete vendor fulfillment orders.
+  - Deducts standard platform commission ($10\%$) from vendor gross amounts.
+  - Generates immutable simulated payment receipts prefixed with `pay_mock_...`.
+  - Enforces order status progression (`Pending` $\rightarrow$ `Processing` $\rightarrow$ `Shipped` $\rightarrow$ `Delivered`).
 
 ---
 
-### 2.3. Real-Time Behavioral Recommendations Engine
-Rather than relying on intrusive tracking pixels, the agent computes affinity vectors locally within the client session by combining implicit and explicit behavioral signals:
+## 3. Data Sources & Inputs Used
 
-#### Weighting Model
-- **Implicit Browsing Signal:** Browsing or viewing a product in category $c$ contributes $+1$ affinity point.
-- **Explicit Conversion Signal:** Purchasing a product in category $c$ contributes $+2$ affinity points (reflecting twice the intent confidence of a passive click).
+| Data Input | Source | Purpose | Data Handling & Privacy |
+|---|---|---|---|
+| **Product Catalog** | Git-native mock data (`src/data/products.js`, `agent.yaml`) | Provides product titles, categories, pricing, stock levels, ratings, and tags | Public catalog data; version-controlled in git repository; zero sensitive info |
+| **Search Queries & Filters** | Shopper input from browser UI controls | Drives semantic keyword expansion, price range filtering, and relevance ranking | Ephemeral memory processing; zero remote telemetry logging or query tracking |
+| **Buyer Browsing & Orders** | Local session storage & in-memory state (`contexts/`) | Constructs personalized affinity vectors and category recommendation scoring | Stored purely client-side; zero external tracking pixels or data exfiltration |
+| **Vendor Listings & Payouts** | Vendor portal state & transaction ledgers | Calculates statistical price bands, commissions, and seller revenue distributions | Processed in local sandbox memory; mock payouts isolated from banking networks |
 
-#### Composite Recommendation Score
-For each prospective candidate product $p$, the recommendation score $R(p)$ is computed as:
-$$R(p) = 3 \cdot \mathcal{A}(\text{category}(p)) + 5 \cdot \mathbb{I}_{\text{featured}}(p) + 4 \cdot \mathbb{I}_{\text{trending}}(p) + 2 \cdot \text{rating}(p) + \min\left(\frac{\text{sold}(p)}{100}, 10\right)$$
-
-Where $\mathcal{A}(c)$ represents the accumulated session affinity for category $c$. The top $k$ items ($k=6$ default) with positive inventory are presented in the buyer's personalized feed.
-
----
-
-### 2.4. Multi-Vendor Order Settlement & Split Routing
-When an order containing items from multiple distinct sellers is confirmed:
-1. **Cart Splitting:** Items are segregated by `vendorId`.
-2. **Platform Commission Calculation:**
-   $$\text{Fee}_{\text{platform}} = \text{Total} \times r_{\text{commission}} \quad (\text{default: } 10\%)$$
-   $$\text{Payout}_{\text{vendor}} = \text{Total} - \text{Fee}_{\text{platform}}$$
-3. **State Transition Engine:**
-   $$\text{Pending} \xrightarrow{\text{Vendor Confirm}} \text{Processing} \xrightarrow{\text{Fulfillment}} \text{Shipped} \xrightarrow{\text{Carrier Arrival}} \text{Delivered}$$
-4. **Refund Arbitration:** If a buyer requests a refund on a delivered item, the request is routed to the Platform Administrator. The administrator evaluates the reason, and upon approval, reverses the vendor credit and logs the transaction.
+Ecommerce Website complies with privacy-by-design standards:
+- **No PII collection:** No raw credit card numbers, CVVs, passwords, or government identifiers are ever stored, transmitted, or logged.
+- **Stateless execution:** Catalog filtering, NLP matching, and recommendation generation occur entirely client-side within the browser runtime.
 
 ---
 
-## 3. Data Architecture & Data Usage
+## 4. Known Limitations & Failure Modes
 
-The agent interacts strictly with well-defined, structured data schemas:
+Reviewers and engineers should be aware of the following system boundaries:
 
-| Data Entity | Fields Used by Agent | Purpose in Decision Making |
-| :--- | :--- | :--- |
-| **Product Record** | `id`, `name`, `category`, `subcategory`, `price`, `rating`, `stock`, `sold`, `vendorId`, `tags`, `synonyms` | Search token indexing, price distribution analysis, stock validation |
-| **Buyer Session** | `browsingHistory` (product IDs), `cart` (items, quantities), `wishlist` | Real-time category affinity computation, basket totals |
-| **Order Ledger** | `orderId`, `buyerId`, `items`, `vendorSplits`, `totalAmount`, `status`, `paymentHash`, `createdAt` | Fulfillment tracking, historical affinity scoring, split vendor accounting |
-| **Vendor Record** | `vendorId`, `businessName`, `status` (`verified`/`pending`), `payoutLedger` | Listing authorization, payout calculation, ledger balancing |
-| **Platform Config**| `commissionRate`, `minimumPayoutThreshold`, `sandboxMode` | Platform fee deductions, transaction simulation rules |
+1. **Typo Distance Bound:**
+   - *Limitation:* Search terms exceeding a Levenshtein edit distance of 2 (e.g., severely garbled queries) fail to trigger fuzzy matching.
+   - *Mitigation:* The agent falls back to category and tag matching, prompting the user with suggested synonym keywords to refine their query.
 
-### Data Protection & PII Governance
-- **Redaction:** Credit card numbers and CVVs are never ingested into decision models or persisted.
-- **Local Persistence:** Session data is stored in client memory/local state, preventing unsolicited cloud data exfiltration.
-- **Mock Tokenization:** All payment sequences utilize simulated cryptographic hashes (e.g. `pay_mock_...`) to isolate sandbox testing from real financial networks.
+2. **Cold-Start Recommendation Scenarios:**
+   - *Limitation:* First-time visitors without browsing history or order receipts possess zero category affinity vectors ($\mathcal{A}(c) = 0$).
+   - *Mitigation:* The agent gracefully falls back to global catalog heuristics, prioritizing trending products, featured badges, and top-rated items.
 
----
+3. **Small Sample Size in Pricing Clusters:**
+   - *Limitation:* Niche categories with fewer than 2 active competing listings lack statistical validity for price benchmarking.
+   - *Mitigation:* The pricing engine returns `null` for clusters with insufficient sample size, preventing skewed or inaccurate pricing recommendations.
 
-## 4. Operational Limitations & Boundaries
-
-To ensure safe, compliant operation, the agent operates within defined boundaries:
-
-1. **Typo Tolerance Boundary:**
-   - Levenshtein distance matching is bounded at $threshold = 2$.
-   - *Limitation:* Queries with more than 2 character typos or severely garbled acronyms will not match and require manual user query refinement.
-2. **Cold-Start Recommendations:**
-   - In new sessions without prior browsing history or orders ($\mathcal{A}(c) = 0$), the agent falls back to global popularity indicators (featured status, trending badges, and verified buyer ratings).
-3. **Statistical Sample Size in Pricing:**
-   - If a category cluster contains fewer than 2 active competing products, the pricing advisor returns `null` rather than generating potentially skewed pricing benchmarks.
-4. **Sandbox Payment vs Real Settlement:**
-   - The payment gateway simulates asynchronous network handshakes via mock timeouts (`setTimeout`). It does not communicate with live banking rails or credit clearing houses.
-5. **Human-in-the-Loop Refund Escalation:**
-   - The agent cannot autonomously deduct funds from vendor bank accounts for refunds. All contested chargebacks and return requests require human administrative sign-off (`admin-auditor` role) in compliance with marketplace segregation of duties.
+4. **Sandbox Gateway Settlement:**
+   - *Limitation:* Payment transactions operate in a local simulation sandbox and do not settle real fiat currency or interact with automated clearing houses (ACH).
+   - *Mitigation:* All transaction tokens are deterministically prefixed with `pay_mock_...` and state updates are recorded in transparent, local audit ledgers.
 
 ---
 
-## 5. Audit & Compliance Statement
-VendorHub Agent operates under **OpenGAP Spec v0.1.0** compliance guidelines:
-- Adheres to **FINRA 2210** communications fairness (no misleading price representations).
-- Enforces strict role isolation between sellers, buyers, and administrators via [`DUTIES.md`](DUTIES.md).
-- Maintains immutable structured audit logs for all order lifecycle mutations.
+## 5. Verification, Safety & Human Oversight
+
+- **Real-Time Operational Dashboards:** The platform provides dedicated operational views for Buyers, Vendors, and Platform Admins, allowing continuous verification of order statuses, stock counts, and fee distributions.
+- **Segregation of Duties (SOD):** Critical operations strictly adhere to `DUTIES.md` role boundaries (`buyer_assistant`, `vendor_advisor`, `order_executor`, `admin_auditor`), preventing vendors from self-approving refund disputes or manipulating platform fees.
+- **Git-Native Auditability:** Every configuration manifest, schema definition, skill module, and pricing rule is tracked through git commits, ensuring complete reproducibility and auditable provenance.
